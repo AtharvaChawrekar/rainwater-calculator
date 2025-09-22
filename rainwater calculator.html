@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Rain-Water Harvesting Calculator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --primary: #0077ff;
+      --bg: #f5f9ff;
+      --card: #ffffff;
+      --text: #222;
+      --muted: #667;
+    }
+    * {
+      box-sizing: border-box;
+      font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      padding: 2rem 1rem;
+    }
+    .wrapper {
+      width: 100%;
+      max-width: 420px;
+    }
+    h1 {
+      font-size: 1.6rem;
+      margin: 0 0 1.2rem;
+      text-align: center;
+      color: var(--primary);
+    }
+    .card {
+      background: var(--card);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+      margin-bottom: 1.2rem;
+    }
+    label {
+      display: block;
+      margin: 0.6rem 0 0.2rem;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+    input {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 1px solid #ccd9e6;
+      border-radius: 6px;
+      font-size: 1rem;
+    }
+    button {
+      margin-top: 1.2rem;
+      width: 100%;
+      padding: 0.75rem;
+      font-size: 1rem;
+      font-weight: 600;
+      color: #fff;
+      background: var(--primary);
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #005fd1;
+    }
+    .result {
+      margin-top: 1.2rem;
+      font-size: 1.1rem;
+      line-height: 1.5;
+    }
+    .highlight {
+      font-weight: 700;
+      color: var(--primary);
+    }
+    .receipt {
+      font-size: 0.95rem;
+      color: var(--muted);
+    }
+    footer {
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <h1>Rainwater Harvesting Calculator</h1>
+
+    <div class="card">
+      <label for="rooftop">Rooftop Area (m²)</label>
+      <input id="rooftop" type="number" placeholder="e.g. 120" min="0" step="0.1" />
+
+      <label for="dwellers">Number of People in family</label>
+      <input id="dwellers" type="number" placeholder="e.g. 5" min="0" step="1" />
+
+      <label for="openSpace">Available Open Space (m²)</label>
+      <input id="openSpace" type="number" placeholder="e.g. 200" min="0" step="0.1" />
+
+      <label for="groundwaterDepth">Groundwater Depth (m)</label>
+      <input id="groundwaterDepth" type="number" placeholder="e.g. 10" min="0" step="1" />
+
+      <label for="annualRainfall">Annual Rainfall (mm)</label>
+      <input id="annualRainfall" type="number" placeholder="e.g. 900" min="0" step="1" />
+
+      <button onclick="calculate()">Calculate Potential</button>
+
+      <div id="result" class="result" hidden></div>
+      <div id="suggestion" class="result" hidden></div>
+    </div>
+
+    <div class="card receipt" id="receipt" hidden>
+      <strong>Receipt & Insights</strong>
+      <div id="receiptText"></div>
+    </div>
+
+   
+  </div>
+
+  <script>
+    function calculate() {
+      const A = parseFloat(document.getElementById("rooftop").value) || 0;
+      const D = parseInt(document.getElementById("dwellers").value) || 0;
+      const S = parseFloat(document.getElementById("openSpace").value) || 0;
+      const G = parseFloat(document.getElementById("groundwaterDepth").value) || 0;
+      const R = parseFloat(document.getElementById("annualRainfall").value) || 900; // Default to 900 mm if left empty
+
+      if (!A || !D || !S || !G || !R) {
+        alert("Please fill in all fields.");
+        return;
+      }
+
+      const annualRunoffLitres = Math.round(A * R * 0.8); // Assumed runoff coefficient
+
+      // Pit sizing (Recharge pit logic)
+      const pitVolumeM3 = annualRunoffLitres / 1000 / 100; // 1% routed to pit
+      const depth = 1.5; // m (fixed)
+      const length = 2;  // m (fixed short side)
+      const width = (pitVolumeM3 / (length * depth)).toFixed(1);
+
+      // Display result
+      const res = document.getElementById("result");
+      res.hidden = false;
+      res.innerHTML = `
+        Runoff Generation Capacity:<br/>
+        <span class="highlight">${annualRunoffLitres.toLocaleString()} Litres/Year</span>
+        <br/><br/>
+        Recommended Recharge Pit<br/>
+        <span class="highlight">${length} m × ${width} m</span><br/>
+        Depth: <span class="highlight">${depth} m</span>
+      `;
+
+      // Recharge system suggestion based on groundwater depth
+      const suggestion = document.getElementById("suggestion");
+      suggestion.hidden = false;
+
+      let systemType = '';
+      if (G <= 10) {
+        systemType = 'Surface Recharge Pit (Suitable for Shallow Groundwater)';
+      } else if (G > 10 && G <= 20) {
+        systemType = 'Recharge Trench (Suitable for Moderate Depth Groundwater)';
+      } else {
+        systemType = 'Borewell Recharge (Suitable for Deep Groundwater)';
+      }
+
+      suggestion.innerHTML = `
+        Suggested System: <br>
+        <span class="highlight">${systemType}</span>
+      `;
+
+      // Receipt
+      const receipt = document.getElementById("receipt");
+      receipt.hidden = false;
+      document.getElementById("receiptText").innerHTML = `
+        Rooftop: ${A} m²<br/>
+        Dwellers: ${D}<br/>
+        Open space: ${S} m²<br/>
+        Groundwater Depth: ${G} m<br/>
+        Annual rainfall assumed: ${R} mm<br/>
+        Runoff coefficient: 0.8<br/>
+        Volume routed to pit: 1 % of total runoff
+      `;
+    }
+  </script>
+</body>
+</html>
